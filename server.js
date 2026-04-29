@@ -413,6 +413,236 @@ app.delete('/api/programs/:id', async (req, res) => {
     }
 });
 
+// ==================== Tasks API ====================
+
+// 작업 목록 조회
+app.get('/api/tasks', async (req, res) => {
+    try {
+        const tasks = await supabaseGet('tasks', { order: 'created_at.desc' });
+        
+        // snake_case를 camelCase로 변환
+        const transformedTasks = tasks.map(t => ({
+            id: t.id,
+            programId: t.program_id,
+            platform: t.platform,
+            createdAt: t.created_at,
+            receivedDate: t.received_date,
+            company: t.company,
+            startDate: t.start_date,
+            endDate: t.end_date,
+            keyword: t.keyword,
+            quantity: t.quantity,
+            workDays: t.work_days,
+            productUrl: t.product_url,
+            originalUrl: t.original_url,
+            sellerMid: t.seller_mid,
+            service1: t.service1,
+            service2: t.service2,
+            service3: t.service3,
+            method: t.method,
+            placeName: t.place_name,
+            rankKeyword: t.rank_keyword,
+            searchKeyword: t.search_keyword,
+            workAmount: t.work_amount,
+            totalWorkAmount: t.total_work_amount,
+            placeUrl: t.place_url,
+            paymentDate: t.payment_date,
+            product: t.product,
+            account: t.account,
+            channelName: t.channel_name,
+            username: t.username,
+            password: t.password
+        }));
+        
+        res.json({ success: true, data: transformedTasks });
+    } catch (error) {
+        console.error('Error fetching tasks:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// 작업 추가
+app.post('/api/tasks', async (req, res) => {
+    try {
+        const taskData = req.body;
+        
+        if (!taskData.programId) {
+            return res.status(400).json({ 
+                success: false, 
+                error: '프로그램은 필수입니다.' 
+            });
+        }
+        
+        // camelCase를 snake_case로 변환
+        const newTask = {
+            program_id: taskData.programId,
+            platform: taskData.platform || '',
+            received_date: taskData.receivedDate || '',
+            company: taskData.company || '',
+            start_date: taskData.startDate || '',
+            end_date: taskData.endDate || '',
+            keyword: taskData.keyword || '',
+            quantity: taskData.quantity || '',
+            work_days: taskData.workDays || '',
+            product_url: taskData.productUrl || '',
+            original_url: taskData.originalUrl || '',
+            seller_mid: taskData.sellerMid || '',
+            service1: taskData.service1 || '',
+            service2: taskData.service2 || '',
+            service3: taskData.service3 || '',
+            method: taskData.method || '',
+            place_name: taskData.placeName || '',
+            rank_keyword: taskData.rankKeyword || '',
+            search_keyword: taskData.searchKeyword || '',
+            work_amount: taskData.workAmount || '',
+            total_work_amount: taskData.totalWorkAmount || '',
+            place_url: taskData.placeUrl || '',
+            payment_date: taskData.paymentDate || '',
+            product: taskData.product || '',
+            account: taskData.account || '',
+            channel_name: taskData.channelName || '',
+            username: taskData.username || '',
+            password: taskData.password || '',
+            created_at: new Date().toISOString()
+        };
+        
+        const [created] = await supabaseInsert('tasks', newTask);
+        
+        // 응답을 camelCase로 변환
+        res.json({ 
+            success: true, 
+            data: {
+                id: created.id,
+                programId: created.program_id,
+                platform: created.platform,
+                createdAt: created.created_at,
+                receivedDate: created.received_date,
+                company: created.company,
+                startDate: created.start_date,
+                endDate: created.end_date,
+                keyword: created.keyword,
+                quantity: created.quantity,
+                workDays: created.work_days,
+                productUrl: created.product_url,
+                originalUrl: created.original_url,
+                sellerMid: created.seller_mid,
+                service1: created.service1,
+                service2: created.service2,
+                service3: created.service3,
+                method: created.method,
+                placeName: created.place_name,
+                rankKeyword: created.rank_keyword,
+                searchKeyword: created.search_keyword,
+                workAmount: created.work_amount,
+                totalWorkAmount: created.total_work_amount,
+                placeUrl: created.place_url,
+                paymentDate: created.payment_date,
+                product: created.product,
+                account: created.account,
+                channelName: created.channel_name,
+                username: created.username,
+                password: created.password
+            }
+        });
+    } catch (error) {
+        console.error('Error creating task:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// 작업 수정
+app.patch('/api/tasks/:id', async (req, res) => {
+    try {
+        const taskId = parseInt(req.params.id);
+        const taskData = req.body;
+        
+        // camelCase를 snake_case로 변환
+        const updateData = {};
+        if (taskData.programId !== undefined) updateData.program_id = taskData.programId;
+        if (taskData.platform !== undefined) updateData.platform = taskData.platform;
+        if (taskData.receivedDate !== undefined) updateData.received_date = taskData.receivedDate;
+        if (taskData.company !== undefined) updateData.company = taskData.company;
+        if (taskData.startDate !== undefined) updateData.start_date = taskData.startDate;
+        if (taskData.endDate !== undefined) updateData.end_date = taskData.endDate;
+        if (taskData.keyword !== undefined) updateData.keyword = taskData.keyword;
+        if (taskData.quantity !== undefined) updateData.quantity = taskData.quantity;
+        if (taskData.workDays !== undefined) updateData.work_days = taskData.workDays;
+        if (taskData.productUrl !== undefined) updateData.product_url = taskData.productUrl;
+        if (taskData.originalUrl !== undefined) updateData.original_url = taskData.originalUrl;
+        if (taskData.sellerMid !== undefined) updateData.seller_mid = taskData.sellerMid;
+        if (taskData.service1 !== undefined) updateData.service1 = taskData.service1;
+        if (taskData.service2 !== undefined) updateData.service2 = taskData.service2;
+        if (taskData.service3 !== undefined) updateData.service3 = taskData.service3;
+        if (taskData.method !== undefined) updateData.method = taskData.method;
+        if (taskData.placeName !== undefined) updateData.place_name = taskData.placeName;
+        if (taskData.rankKeyword !== undefined) updateData.rank_keyword = taskData.rankKeyword;
+        if (taskData.searchKeyword !== undefined) updateData.search_keyword = taskData.searchKeyword;
+        if (taskData.workAmount !== undefined) updateData.work_amount = taskData.workAmount;
+        if (taskData.totalWorkAmount !== undefined) updateData.total_work_amount = taskData.totalWorkAmount;
+        if (taskData.placeUrl !== undefined) updateData.place_url = taskData.placeUrl;
+        if (taskData.paymentDate !== undefined) updateData.payment_date = taskData.paymentDate;
+        if (taskData.product !== undefined) updateData.product = taskData.product;
+        if (taskData.account !== undefined) updateData.account = taskData.account;
+        if (taskData.channelName !== undefined) updateData.channel_name = taskData.channelName;
+        if (taskData.username !== undefined) updateData.username = taskData.username;
+        if (taskData.password !== undefined) updateData.password = taskData.password;
+        
+        const [updated] = await supabaseUpdate('tasks', taskId, updateData);
+        
+        // 응답을 camelCase로 변환
+        res.json({ 
+            success: true, 
+            data: {
+                id: updated.id,
+                programId: updated.program_id,
+                platform: updated.platform,
+                createdAt: updated.created_at,
+                receivedDate: updated.received_date,
+                company: updated.company,
+                startDate: updated.start_date,
+                endDate: updated.end_date,
+                keyword: updated.keyword,
+                quantity: updated.quantity,
+                workDays: updated.work_days,
+                productUrl: updated.product_url,
+                originalUrl: updated.original_url,
+                sellerMid: updated.seller_mid,
+                service1: updated.service1,
+                service2: updated.service2,
+                service3: updated.service3,
+                method: updated.method,
+                placeName: updated.place_name,
+                rankKeyword: updated.rank_keyword,
+                searchKeyword: updated.search_keyword,
+                workAmount: updated.work_amount,
+                totalWorkAmount: updated.total_work_amount,
+                placeUrl: updated.place_url,
+                paymentDate: updated.payment_date,
+                product: updated.product,
+                account: updated.account,
+                channelName: updated.channel_name,
+                username: updated.username,
+                password: updated.password
+            }
+        });
+    } catch (error) {
+        console.error('Error updating task:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// 작업 삭제
+app.delete('/api/tasks/:id', async (req, res) => {
+    try {
+        const taskId = parseInt(req.params.id);
+        await supabaseDelete('tasks', taskId);
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Error deleting task:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
 // 7. 모든 상품 순위 체크
 app.post('/api/check-all-products', async (req, res) => {
     try {
