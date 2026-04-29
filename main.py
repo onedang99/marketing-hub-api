@@ -92,25 +92,36 @@ class NaverShoppingRank(NaverSearchAPI):
 
 
 if __name__ == "__main__":
-    target_url = "https://smartstore.naver.com/easycontact/products/4729605882"
-    target_keywords = [
-        "세탁기 선반 건기 드럼",
-        "세탁기 선반 건기 위",
-        "세탁기 선반 건기 랙",
-        "세탁기 선반 건기 2단",
-        "세탁기 선반 건기 세탁실",
-        "없음 테스트"
-    ]
-
-    ranker = NaverShoppingRank(target_url)
-
-    for idx, kw in enumerate(target_keywords, start=1):
-        # results 에 상품정보 및 순위 정보 담겨있음.
-        result = ranker.get(kw)
-
-        # Print 하기위한 로직이며 붎필요.
+    import sys
+    import json
+    
+    if len(sys.argv) < 3:
+        print(json.dumps({"success": False, "error": "Usage: python main.py <product_url> <keyword>"}))
+        sys.exit(1)
+    
+    target_url = sys.argv[1]
+    keyword = sys.argv[2]
+    
+    try:
+        ranker = NaverShoppingRank(target_url)
+        result = ranker.get(keyword)
+        
         if result:
-            short_title = result['title'][:10] + '...' if len(result['title']) > 10 else result['title']
-            print(f"{idx}. {kw} : {short_title} {result['rank']} 위")
+            output = {
+                "success": True,
+                "rank": result.get('rank'),
+                "title": result.get('title'),
+                "image": result.get('image')
+            }
         else:
-            print(f"{idx}. {kw} : 순위 밖 (1200위 초과)")
+            output = {
+                "success": True,
+                "rank": None,
+                "title": None,
+                "image": None
+            }
+        
+        print(json.dumps(output))
+    except Exception as e:
+        print(json.dumps({"success": False, "error": str(e)}))
+        sys.exit(1)
