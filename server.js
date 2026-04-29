@@ -199,7 +199,16 @@ app.get('/api/ranking-history/:productId', async (req, res) => {
             filter: `product_id=eq.${productId}`,
             order: 'checked_at.desc'
         });
-        res.json({ success: true, data: history });
+        
+        // snake_case를 camelCase로 변환
+        const transformedHistory = history.map(h => ({
+            id: h.id,
+            productId: h.product_id,
+            rank: h.rank,
+            checkedAt: h.checked_at
+        }));
+        
+        res.json({ success: true, data: transformedHistory });
     } catch (error) {
         console.error('Error fetching history:', error);
         res.status(500).json({ success: false, error: error.message });
@@ -237,7 +246,23 @@ app.post('/api/check-ranking/:id', async (req, res) => {
             // 순위 이력 저장
             await saveRankingHistory(productId, result.rank);
             
-            res.json({ success: true, data: updated });
+            // snake_case를 camelCase로 변환
+            const transformedData = {
+                id: updated.id,
+                programId: updated.program_id,
+                productName: updated.product_name,
+                keyword: updated.keyword,
+                productUrl: updated.product_url,
+                currentRank: updated.current_rank,
+                previousRank: updated.previous_rank,
+                status: updated.status,
+                createdAt: updated.created_at,
+                lastChecked: updated.last_checked,
+                productTitle: updated.product_title,
+                imageUrl: updated.image_url
+            };
+            
+            res.json({ success: true, data: transformedData });
         } catch (crawlError) {
             console.error('Crawl error:', crawlError);
             await supabaseUpdate('tracking_products', productId, { status: 'error' });
