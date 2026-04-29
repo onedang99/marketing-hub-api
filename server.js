@@ -99,7 +99,24 @@ app.get('/api/tracking-products', async (req, res) => {
         const products = await supabaseGet('tracking_products', { 
             order: 'created_at.desc' 
         });
-        res.json({ success: true, data: products });
+        
+        // snake_case를 camelCase로 변환
+        const transformedProducts = products.map(p => ({
+            id: p.id,
+            programId: p.program_id,
+            productName: p.product_name,
+            keyword: p.keyword,
+            productUrl: p.product_url,
+            currentRank: p.current_rank,
+            previousRank: p.previous_rank,
+            status: p.status,
+            createdAt: p.created_at,
+            lastChecked: p.last_checked,
+            productTitle: p.product_title,
+            imageUrl: p.image_url
+        }));
+        
+        res.json({ success: true, data: transformedProducts });
     } catch (error) {
         console.error('Error fetching products:', error);
         res.status(500).json({ success: false, error: error.message });
@@ -119,7 +136,6 @@ app.post('/api/tracking-products', async (req, res) => {
         }
 
         const newProduct = {
-            id: Date.now(),
             keyword,
             product_url: productUrl,
             product_name: productName || '상품명 미입력',
@@ -146,10 +162,10 @@ app.post('/api/tracking-products', async (req, res) => {
                 image_url: result.image || null
             };
             
-            const [updated] = await supabaseUpdate('tracking_products', newProduct.id, updatedData);
+            const [updated] = await supabaseUpdate('tracking_products', createdProduct.id, updatedData);
             
             // 순위 이력 저장
-            await saveRankingHistory(newProduct.id, result.rank);
+            await saveRankingHistory(createdProduct.id, result.rank);
             
             res.json({ success: true, data: updated });
         } catch (crawlError) {
@@ -262,6 +278,112 @@ app.get('/api/dashboard-stats', async (req, res) => {
         });
     } catch (error) {
         console.error('Error fetching stats:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// ==================== Programs API ====================
+
+// 프로그램 목록 조회
+app.get('/api/programs', async (req, res) => {
+    try {
+        const programs = await supabaseGet('programs', { order: 'id.asc' });
+        
+        // snake_case를 camelCase로 변환
+        const transformedPrograms = programs.map(p => ({
+            id: p.id,
+            platform: p.platform,
+            name: p.name,
+            description: p.description,
+            dailyRate: p.daily_rate,
+            createdAt: p.created_at
+        }));
+        
+        res.json({ success: true, data: transformedPrograms });
+    } catch (error) {
+        console.error('Error fetching programs:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// 프로그램 추가
+app.post('/api/programs', async (req, res) => {
+    try {
+        const { platform, name, description, dailyRate } = req.body;
+        
+        if (!platform || !name || !dailyRate) {
+            return res.status(400).json({ 
+                success: false, 
+                error: '플랫폼, 프로그램명, 하루 당 금액은 필수입니다.' 
+            });
+        }
+        
+        const newProgram = {
+            platform,
+            name,
+            description: description || '',
+            daily_rate: dailyRate,
+            created_at: new Date().toISOString()
+        };
+        
+        const [created] = await supabaseInsert('programs', newProgram);
+        
+        res.json({ 
+            success: true, 
+            data: {
+                id: created.id,
+                platform: created.platform,
+                name: created.name,
+                description: created.description,
+                dailyRate: created.daily_rate,
+                createdAt: created.created_at
+            }
+        });
+    } catch (error) {
+        console.error('Error creating program:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// 프로그램 수정
+app.patch('/api/programs/:id', async (req, res) => {
+    try {
+        const programId = parseInt(req.params.id);
+        const { platform, name, description, dailyRate } = req.body;
+        
+        const updateData = {};
+        if (platform) updateData.platform = platform;
+        if (name) updateData.name = name;
+        if (description !== undefined) updateData.description = description;
+        if (dailyRate) updateData.daily_rate = dailyRate;
+        
+        const [updated] = await supabaseUpdate('programs', programId, updateData);
+        
+        res.json({ 
+            success: true, 
+            data: {
+                id: updated.id,
+                platform: updated.platform,
+                name: updated.name,
+                description: updated.description,
+                dailyRate: updated.daily_rate,
+                createdAt: updated.created_at
+            }
+        });
+    } catch (error) {
+        console.error('Error updating program:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// 프로그램 삭제
+app.delete('/api/programs/:id', async (req, res) => {
+    try {
+        const programId = parseInt(req.params.id);
+        await supabaseDelete('programs', programId);
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Error deleting program:', error);
         res.status(500).json({ success: false, error: error.message });
     }
 });
